@@ -23,7 +23,7 @@ class Stack {
             delete [] data;
         };
 
-        std::string top(){
+        std::string peak(){
             return data[top];
         };
         std::string pop(){
@@ -56,6 +56,4 @@ class Stack {
         int const DEFAULT_SIZE = 10;
         int max_size;
         int top;
-
-    
 };

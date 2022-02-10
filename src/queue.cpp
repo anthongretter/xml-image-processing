@@ -54,7 +54,7 @@ class Queue {
         };
         int back(){
             if(!isEmpty()){
-                return data[__top];
+                return data[top];
             }
             throw std::out_of_range("queue is empty");
         };
