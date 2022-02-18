@@ -9,13 +9,13 @@ class Queue {
 
         Queue(){
             max_size = DEFAULT_SIZE;
-            data = new int[max_size];
+            data = new std::pair<int,int>[max_size];
             top = -1;
         };
 
         explicit Queue(int size){
             max_size = size;
-            data = new int[max_size];
+            data = new std::pair<int,int>[max_size];
             top = -1;
         };
 
@@ -32,7 +32,7 @@ class Queue {
         bool isEmpty(){
             return top == -1;
         };
-        int push(int value){
+        int push(std::pair<int,int> value){
             if(!isFull()){
                 top +=1;
                 data[top] = value;
@@ -40,9 +40,9 @@ class Queue {
             }
             throw std::out_of_range("queue is full");
         };
-        int pop(){
+        std::pair<int,int> pop(){
             if(!isEmpty()){
-                int out = data[0];
+                std::pair<int,int> out = data[0];
                 top -=1;
                 for(int i = 0; i <= top; i++){
                     data[i] = data[i+1];
@@ -52,7 +52,7 @@ class Queue {
             throw std::out_of_range("queue is empty");
 
         };
-        int back(){
+        std::pair<int,int> back(){
             if(!isEmpty()){
                 return data[top];
             }
@@ -61,7 +61,7 @@ class Queue {
 
 
     private:
-        int* data;
+        std::pair<int,int>* data;
         int top;
         int max_size;
         int const DEFAULT_SIZE = 10;

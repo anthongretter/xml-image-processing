@@ -1,9 +1,10 @@
+// Anthon Porath Gretter e Rian Block Serena
+
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
 #include <string>
 #include <sstream>
-#include <queue>
 
 class Stack {
 
@@ -60,69 +61,82 @@ class Stack {
 };
 
 
-// class Queue {
-//     public:
+class Queue {
+    public:
 
-//         Queue(){
-//             max_size = DEFAULT_SIZE;
-//             data = new std::pair<int,int>[max_size];
-//             top = -1;
-//         };
+        Queue(){
+            size_ = 0;
+            max_size_ = DEFAULT_SIZE;
+            data = new std::pair<int,int>[max_size_];
+            begin_ = 0;
+            end_ = 0;
+        };
 
-//         explicit Queue(int size){
-//             max_size = size;
-//             data = new std::pair<int,int>[max_size];
-//             top = -1;
-//         };
+        explicit Queue(int max){
+            size_ = 0;
+            max_size_ = max;
+            data = new std::pair<int,int>[max_size_];
+            begin_ = 0;
+            end_ = 0;
+        };
 
-//         ~Queue(){
-//             delete [] data;
-//         };
+        ~Queue(){
+            delete [] data;
+        };
 
-//         void clear(){
-//             top = -1;
-//         };
-//         bool isFull(){
-//             return top == max_size-1;
-//         };
-//         bool isEmpty(){
-//             return top == -1;
-//         };
-//         int push(std::pair<int,int> value){
-//             if(!isFull()){
-//                 top +=1;
-//                 data[top] = value;
-//                 return top;
-//             }
-//             throw std::out_of_range("queue is full");
-//         };
-//         std::pair<int,int> pop(){
-//             if(!isEmpty()){
-//                 std::pair<int,int> out = data[0];
-//                 top -=1;
-//                 for(int i = 0; i <= top; i++){
-//                     data[i] = data[i+1];
-//                 }
-//                 return out;
-//             }
-//             throw std::out_of_range("queue is empty");
+        void clear(){
+            while (!empty()) {
+                pop();
+            }
+        };
+        bool full(){
+            return (size_ == max_size_);
+        };
+        bool empty(){
+            return (size_ == 0);
+        };
+        void push(std::pair<int,int> value){
+            if (full()) {
+                throw std::out_of_range("fila cheia");
+            }
+            data[begin_] = value;
+            begin_++;
+            size_++;
+            if (begin_ == static_cast<int>(max_size_)) {
+                begin_ = 0;
+            }
+        };
+        std::pair<int,int> pop(){
+            if (empty()) {
+                throw std::out_of_range("fila vazia");
+            }
+            std::pair<int,int> last_in_line = data[end_];
+            end_++;
+            size_--;
+            if (end_ == static_cast<int>(max_size_)) {
+                end_ = 0;
+            }
+            return last_in_line;
 
-//         };
-//         std::pair<int,int> back(){
-//             if(!isEmpty()){
-//                 return data[top];
-//             }
-//             throw std::out_of_range("queue is empty");
-//         };
+        };
+        std::pair<int,int> back(){
+            if (empty()) {
+                throw std::out_of_range("fila vazia");
+            }
+            return data[begin_-1];
+        };
 
 
-//     private:
-//         std::pair<int,int>* data;
-//         int top;
-//         int max_size;
-//         int const DEFAULT_SIZE = 50;
+    private:
+        std::pair<int,int>* data;
 
-// };
+        std::size_t size_;
+        std::size_t max_size_;
+        int begin_;  // indice do inicio (para fila circular)
+        int end_;  // indice do fim (para fila circular)
+        static const auto DEFAULT_SIZE = 500;
+
+};
 
 
 namespace xml {
@@ -130,6 +144,8 @@ namespace xml {
 std::string get_content(const std::string& origin, const std::string& begin, const std::string& end, size_t& start) {
     size_t start_pos = origin.find(begin, start);
 	size_t close_pos = origin.find(end, start_pos);
+
+    start = close_pos;
 
 	start_pos += begin.length();
 	return origin.substr(start_pos, close_pos - start_pos);
@@ -210,7 +226,7 @@ void delete_matrix(int height, int** matrix) {
 }
 
 // popula a matriz com um conteudo
-void pop_matrix(int height, int width, int** matrix, const std::string& content) {
+int** pop_matrix(int height, int width, int** &matrix, const std::string& content) {
     int i = 0, j = 0;
 
     for ( const char& c : content ) {
@@ -218,10 +234,11 @@ void pop_matrix(int height, int width, int** matrix, const std::string& content)
         // ignora espaços
         if ( std::isspace(c) ) continue;
 
-        if ( c == '\n') continue;
+        // ignora quebras
+        if (c == '\n') continue;
 
         // popula matriz
-        matrix[i][j] = (int) c;
+        matrix[i][j] = c - '0';
 
         // proxima coluna
         j++;
@@ -236,6 +253,7 @@ void pop_matrix(int height, int width, int** matrix, const std::string& content)
                 break;
         }
     }
+    return matrix;
 }
 
 int related_components(int height, int width, int** E) {
@@ -244,7 +262,7 @@ int related_components(int height, int width, int** E) {
 	int label = 1;
 
     // fila
-    std::queue<std::pair<int,int>> waiting_line;
+    Queue waiting_line;
 
 	// para cada pixel na matriz de entrada
 	for ( int i = 0; i < height; ++i ) {
@@ -256,38 +274,38 @@ int related_components(int height, int width, int** E) {
                 
 				// rotula o pixel e o coloca na fila de processamento
 				R[i][j] = label;
-				waiting_line.push({j,i});  // (x,y)
+				waiting_line.push({i,j});  // (x,y)
 
 				// processa cada pixel conexo aos que estao na fila
 				while ( !waiting_line.empty() ) {
-					pixel p = waiting_line.front();
+                    pixel p = waiting_line.pop();
 					const auto x = p.first;
 					const auto y = p.second;
 
 					// repete para a vizinhanca-4, quando existir, for
 					// diferente de zero e ainda nao tiver sido processada
-					if ( x - 1 >= 0 && !R[y][x-1] && E[y][x-1] ) {
-						R[y][x-1] = label;
-						waiting_line.push({x-1,y});
-					}
-					if ( x + 1 < width && !R[y][x+1] && E[y][x+1] ) {
-						R[y][x+1] = label;
-						waiting_line.push({x+1,y});
-					}
-					if ( y - 1 >= 0 && !R[y-1][x] && E[y-1][x] ) {
-						R[y-1][x] = label;
+					if ( y > 0 && !R[x][y-1] && E[x][y-1] ) {
+						R[x][y-1] = label;
 						waiting_line.push({x,y-1});
 					}
-					if ( y + 1 < height && !R[y+1][x] && E[y+1][x] ) {
-						R[y+1][x] = label;
+					if ( y < (width - 1) && !R[x][y+1] && E[x][y+1] ) {
+						R[x][y+1] = label;
 						waiting_line.push({x,y+1});
+					}
+					if ( x > 0 && !R[x-1][y] && E[x-1][y] ) {
+						R[x-1][y] = label;
+						waiting_line.push({x-1,y});
+					}
+					if ( x < (height - 1) && !R[x+1][y] && E[x+1][y] ) {
+						R[x+1][y] = label;
+						waiting_line.push({x+1,y});
 					}
 				}
 
 				label++;
 			}
 		}
-	}
+    }
 
 	delete_matrix(height, R);
 	return label - 1;  // retorna o ultimo rotulo efetivamente atribuido
@@ -306,7 +324,7 @@ int main() {
     std::cin >> xmlfilename;
 
     // arquivo xml
-    std::ifstream xmlfile (("dataset/{0}.xml", xmlfilename));
+    std::ifstream xmlfile (xmlfilename);
 
     // "traduzindo" xml para o formato string
     std::stringstream stream;
@@ -320,10 +338,11 @@ int main() {
     }
 
     // posicao que comeca a procurar proxima imagem no arquivo
-    size_t pos_start_searching = 0u;
+    size_t pos_start_searching = 0;
     while ( pos_start_searching < xmlstring.length() ) {
         // imagem em string
         const std::string img = get_content(xmlstring, "<img>", "</img>", pos_start_searching);
+        if ( pos_start_searching >= xmlstring.length() ) break;
 
         // nome, sua altura e largura da imagem
         const std::string name = get_content(img, "<name>", "</name>");
@@ -332,13 +351,13 @@ int main() {
 
         // cria matriz e depois popula com os dados da imagem
         int** img_matrix = new_matrix(height, width);
-        pop_matrix(height, width, img_matrix, get_content(img, "<data>", "</data>"));
+        img_matrix = pop_matrix(height, width, img_matrix, get_content(img, "<data>", "</data>"));
 
         // plota nome da imagem e número de componentes conexos
         std::cout << name << ' ' << related_components(height, width, img_matrix) << std::endl;
 
         // libera mem
-        // delete_matrix(height, img_matrix);
+        delete_matrix(height, img_matrix);
     }
 
     return 0;
